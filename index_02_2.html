@@ -42,22 +42,28 @@ window.addEventListener("load", ()=>{
     };
 
     // Madoiライブラリを使ってサービスに接続する。引数の"room/"以降はセッション識別文字列。
-    const m = new madoi.Madoi("rooms/chat-bdxrefsd");
+    const m = new madoi.Madoi("rooms/chat-sfsfss");
+    // 本来のaddMessage関数をoriginalAddMessageに退避しておく
+    const originalAddMessage = addMessage;
+    // addMessageをプロキシ(代理)で置き換え
+    addMessage = function(name, message){
+        m.broadcast("addMessage", {name: name, message: message});
+    }
 
-    // addMessage関数を共有関数として登録する。
-    // プロキシが返されるので，それでaddMessageを置き換えておく。
-    // ハンドラは内部で自動的に作成され，サーバからメッセージが届くと本来のaddMessageが実行される。
-    addMessage = m.registerShareFunction(addMessage);
-
-    // チャットフォームのsubmitイベントで，addMessageを実行する。
+    // チャットフォームのsubmitイベントで，addMessage(置き換え済み)を実行する。
     chatForm.addEventListener("submit", e => {
         e.preventDefault();
         const name = nameInput.value.trim();
         const message = messageInput.value.trim();
         if(message.length == 0) return false;
         messageInput.value = "";
-        // addMessage実行。プロキシが実行される。
         addMessage(name, message);
+    });
+
+    // addMessageメッセージが届いたら，addMessage関数を実行する。
+    m.setHandler("addMessage", body=>{
+        // 退避しておいた本来のaddMessageを実行する
+        originalAddMessage(body.name, body.message);
     });
 });
 </script>
