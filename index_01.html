@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf8">
+<style>
+#chatLog {
+    overflow: scroll;
+    resize: vertical;
+    min-height: 200px;
+    border: solid 1px;
+    padding: 4;
+    border-radius: 4px;
+}
+</style>
+</head>
+<body>
+<form id="chatForm">
+    <div>
+        <input id="name" size="8" type="text" value="匿名">
+        <input id="message" size="20" type="text" placeholder="送信するメッセージ">
+        <button type="submit">送信</button>
+    </div>
+</form>
+<div id="chatLog"></div>
+<script>
+window.addEventListener("load", ()=>{
+    // HTML内のタグをJavaScriptから操作するために，対応するElementオブジェクトを取り出す。
+    const chatForm = document.querySelector("#chatForm");
+    const nameInput = document.querySelector("#name");
+    const messageInput = document.querySelector("#message");
+    const logDiv = document.querySelector("#chatLog");
+
+    // ログ領域にチャットメッセージを追加する関数
+    addMessage = function(name, message){
+        const span = document.createElement("span");
+        const br = document.createElement("br");
+        span.append(name + ": " + message);
+        logDiv.append(span);
+        logDiv.append(br);
+        logDiv.scrollTop = logDiv.scrollHeight;
+    };
+
+    // チャットフォームのsubmitイベントで，addMessage関数を呼び出す。
+    chatForm.addEventListener("submit", e => {
+        e.preventDefault();
+        const name = nameInput.value.trim();
+        const message = messageInput.value.trim();
+        if(message.length == 0) return false;
+        messageInput.value = "";
+        addMessage(name, message);
+    });
+});
+</script>
+</body>
+</html>

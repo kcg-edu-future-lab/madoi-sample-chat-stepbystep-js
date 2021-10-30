@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf8">
+<style>
+#chatLog {
+    overflow: scroll;
+    resize: vertical;
+    min-height: 200px;
+    border: solid 1px;
+    padding: 4;
+    border-radius: 4px;
+}
+</style>
+</head>
+<body>
+<form id="chatForm">
+    <div>
+        <input id="name" size="8" type="text" value="匿名">
+        <input id="message" size="20" type="text" placeholder="送信するメッセージ">
+        <button type="submit">送信</button>
+    </div>
+</form>
+<div id="chatLog"></div>
+<script src="https://fungo.kcg.edu/madoi-20211030/js/madoi.js"></script>
+<script>
+class Chat{
+    constructor(formSelector, nameSelector, messageSelector, logSelector){
+        // HTML内のタグをJavaScriptから操作するために，対応するElementオブジェクトを取り出す。
+        this.chatForm = document.querySelector(formSelector);
+        this.nameInput = document.querySelector(nameSelector);
+        this.messageInput = document.querySelector(messageSelector);
+        this.logDiv = document.querySelector(logSelector);
+        // チャットフォームのsubmitイベントで，chat.addMessageを実行する。
+        this.chatForm.addEventListener("submit", e => {
+            e.preventDefault();
+            const name = this.nameInput.value.trim();
+            const message = this.messageInput.value.trim();
+            if(message.length == 0) return false;
+            this.messageInput.value = "";
+            // addMessage実行。プロキシが実行される。本来のaddMessageはサービスからメッセージが届いた際に実行される。
+            this.addMessage(name, message);
+        });
+    }
+
+    // ログ領域にチャットメッセージを追加する関数
+    addMessage(name, message){
+        const span = document.createElement("span");
+        const br = document.createElement("br");
+        span.append(name + ": " + message);
+        this.logDiv.append(span);
+        this.logDiv.append(br);
+        this.logDiv.scrollTop = this.logDiv.scrollHeight;
+    }
+}
+
+window.addEventListener("load", ()=>{
+    // Chatクラスのインスタンスを作成する。
+    const chat = new Chat("#chatForm", "#name", "#message", "#chatLog");
+
+    // Madoiライブラリを使ってサービスに接続する。引数はセッション識別文字列。
+    const m = new madoi.Madoi("rooms/chat-lekrouhb3");
+
+    // chatインスタンスを登録する。addMessageはプロキシ関数に置き換えられる。
+    m.register(chat, [
+        {method: chat.addMessage, share: {}}
+    ]);
+});
+</script>
+</body>
+</html>
