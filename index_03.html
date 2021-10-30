@@ -41,7 +41,7 @@ window.addEventListener("load", ()=>{
         logDiv.scrollTop = logDiv.scrollHeight;
     };
 
-    // Madoiライブラリを使ってサービスに接続する。引数はセッション識別文字列。
+    // Madoiライブラリを使ってサービスに接続する。引数の"room/"以降はセッション識別文字列。
     const m = new madoi.Madoi("rooms/chat-bdxrefsd");
 
     // addMessage関数を共有関数として登録する。プロキシ関数が返されるので，それをaddMessageに代入しておく。
