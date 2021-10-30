@@ -24,6 +24,22 @@
 <div id="chatLog"></div>
 <script src="https://fungo.kcg.edu/madoi-20211030/js/madoi.js"></script>
 <script>
+window.addEventListener("load", ()=>{
+    // Chatクラスのインスタンスを作成する。
+    const chat = new Chat("#chatForm", "#name", "#message", "#chatLog");
+
+    // Madoiライブラリを使ってサービスに接続する。引数の"room/"以降はセッション識別文字列。
+    const m = new madoi.Madoi("rooms/chat-bersdfsjhisk");
+
+    // chatインスタンスと共有に関するメソッドを登録する。addMessageはプロキシ関数に置き換えられる。
+    // getState/setStateは状態の取得/設定メソッドとして登録される。
+    m.register(chat, [
+        {method: chat.addMessage, share: {}},
+        {method: chat.getState, getState: {}},
+        {method: chat.setState, setState: {}}
+    ]);
+});
+
 class Chat{
     constructor(formSelector, nameSelector, messageSelector, logSelector){
         // HTML内のタグをJavaScriptから操作するために，対応するElementオブジェクトを取り出す。
@@ -80,22 +96,6 @@ class Chat{
         this.logDiv.scrollTop = this.logDiv.scrollHeight;
     }
 }
-
-window.addEventListener("load", ()=>{
-    // Chatクラスのインスタンスを作成する。
-    const chat = new Chat("#chatForm", "#name", "#message", "#chatLog");
-
-    // Madoiライブラリを使ってサービスに接続する。引数の"room/"以降はセッション識別文字列。
-    const m = new madoi.Madoi("rooms/chat-bersdfsjhisk");
-
-    // chatインスタンスと共有に関するメソッドを登録する。addMessageはプロキシ関数に置き換えられる。
-    // getState/setStateは状態の取得/設定メソッドとして登録される。
-    m.register(chat, [
-        {method: chat.addMessage, share: {}},
-        {method: chat.getState, getState: {}},
-        {method: chat.setState, setState: {}}
-    ]);
-});
 </script>
 </body>
 </html>
