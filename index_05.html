@@ -3,10 +3,11 @@
 <head>
 <meta charset="utf8">
 <style>
-#chatLog {
+#chatLogDiv {
     overflow: scroll;
     resize: vertical;
     min-height: 200px;
+    max-height: 400px;
     border: solid 1px;
     padding: 4;
     border-radius: 4px;
@@ -15,57 +16,60 @@
 </head>
 <body>
 <form id="chatForm">
-    <div>
-        <input id="name" size="8" type="text" value="匿名">
-        <input id="message" size="20" type="text" placeholder="送信するメッセージ">
-        <button type="submit">送信</button>
-    </div>
+    <input data-id="name" size="8" type="text" value="匿名">
+    <input data-id="message" size="20" type="text" placeholder="送信するメッセージ">
+    <button type="submit">送信</button>
 </form>
-<div id="chatLog"></div>
-<script src="https://fungo.kcg.edu/madoi-20211030/js/madoi.js"></script>
+<div id="chatLogDiv">
+    <template data-id="logTemplate">
+        <span data-id="name"></span>: <span data-id="message"></span><br/>
+    </template>
+</div>
+<script src="https://fungo.kcg.edu/madoi-20220920/js/madoi.js"></script>
 <script>
 window.addEventListener("load", ()=>{
     // Chatクラスのインスタンスを作成する。
-    const chat = new Chat("#chatForm", "#name", "#message", "#chatLog");
+    const chat = new Chat("chatForm", "chatLogDiv");
 
-    // Madoiライブラリを使ってサービスに接続する。引数の"room/"以降はセッション識別文字列。
-    const m = new madoi.Madoi("rooms/chat-bersdfsjhisk");
+    // Madoiライブラリを使ってサービスに接続する。引数はルーム識別文字列。
+    const m = new madoi.Madoi("chat-bersdfsj5ujhisk");
 
-    // chatインスタンスと共有に関するメソッドを登録する。addMessageはプロキシ関数に置き換えられる。
+    // chatインスタンスと共有に関するメソッドを登録する。addLogはプロキシ関数に置き換えられる。
     // getState/setStateは状態の取得/設定メソッドとして登録される。
     m.register(chat, [
-        {method: chat.addMessage, share: {}},
+        {method: chat.addLog, share: {}},
         {method: chat.getState, getState: {}},
         {method: chat.setState, setState: {}}
     ]);
 });
 
 class Chat{
-    constructor(formSelector, nameSelector, messageSelector, logSelector){
+    constructor(chatFormId, chatLogDivId){
         // HTML内のタグをJavaScriptから操作するために，対応するElementオブジェクトを取り出す。
-        this.chatForm = document.querySelector(formSelector);
-        this.nameInput = document.querySelector(nameSelector);
-        this.messageInput = document.querySelector(messageSelector);
-        this.logDiv = document.querySelector(logSelector);
-        // チャットフォームのsubmitイベントで，chat.addMessageを実行する。
-        this.chatForm.addEventListener("submit", e => {
+        const chatForm = document.getElementById(chatFormId);
+        const nameInput = chatForm.querySelector("[data-id='name']");
+        const messageInput = chatForm.querySelector("[data-id='message']");
+        // チャットフォームのsubmitイベントで，chat.addLogを実行する。
+        chatForm.addEventListener("submit", e => {
             e.preventDefault();
-            const name = this.nameInput.value.trim();
-            const message = this.messageInput.value.trim();
-            if(message.length == 0) return false;
-            this.messageInput.value = "";
-            // addMessage実行。プロキシが実行される。本来のaddMessageはサービスからメッセージが届いた際に実行される。
-            this.addMessage(name, message);
+            const name = nameInput.value.trim();
+            const message = messageInput.value.trim();
+            if(message.length > 0){
+                // addLog実行。プロキシが実行される。本来のaddLogはサービスからメッセージが届いた際に実行される。
+                this.addLog(name, message);
+                messageInput.value = "";
+            }
         });
+        this.chatLogDiv = document.getElementById(chatLogDivId);
+        this.logTemplate = this.chatLogDiv.querySelector("[data-id='logTemplate']");
         this.logs = [];
     }
 
     // ログ領域にチャットメッセージを追加するメソッド
-    addMessage(name, message){
-        const log = name + ": " + message;
-        this.appendLog(log);
-        this.logDiv.scrollTop = this.logDiv.scrollHeight;
-        this.logs.push(log);
+    addLog(name, message){
+        this.appendLog(name, message);
+        this.chatLogDiv.scrollTop = this.chatLogDiv.scrollHeight;
+        this.logs.push({name, message});
         // 100件以上は保持しないようにする。
         if(this.logs.length > 100){
             this.logs.splice(0, this.logs.length - 100);
@@ -73,27 +77,26 @@ class Chat{
     }
 
     // ログ領域にログを追加するメソッド
-    appendLog(log){
-        const span = document.createElement("span");
-        const br = document.createElement("br");
-        span.append(log);
-        this.logDiv.append(span);
-        this.logDiv.append(br);
+    appendLog(name, message){
+        const log = this.logTemplate.content.cloneNode(true);
+        log.querySelector("[data-id='name']").textContent = name;
+        log.querySelector("[data-id='message']").textContent = message;
+        this.chatLogDiv.append(log);
     }
 
     // 状態を取得するメソッド。
     getState(){
-        return JSON.stringify(this.logs);
+        return this.logs;
     }
 
     // 状態を設定するメソッド
     setState(state){
-        this.logs = JSON.parse(state);
-        this.logDiv.innerHTML = "";
-        for(let log of this.logs){
-            this.appendLog(log);
+        this.logs = state;
+        this.chatLogDiv.innerHTML = "";
+        for(let {name, message} of this.logs){
+            this.appendLog(name, message);
         }
-        this.logDiv.scrollTop = this.logDiv.scrollHeight;
+        this.chatLogDiv.scrollTop = this.chatLogDiv.scrollHeight;
     }
 }
 </script>

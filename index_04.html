@@ -3,10 +3,11 @@
 <head>
 <meta charset="utf8">
 <style>
-#chatLog {
+#chatLogDiv {
     overflow: scroll;
     resize: vertical;
     min-height: 200px;
+    max-height: 400px;
     border: solid 1px;
     padding: 4;
     border-radius: 4px;
@@ -15,55 +16,58 @@
 </head>
 <body>
 <form id="chatForm">
-    <div>
-        <input id="name" size="8" type="text" value="匿名">
-        <input id="message" size="20" type="text" placeholder="送信するメッセージ">
-        <button type="submit">送信</button>
-    </div>
+    <input data-id="name" size="8" type="text" value="匿名">
+    <input data-id="message" size="20" type="text" placeholder="送信するメッセージ">
+    <button type="submit">送信</button>
 </form>
-<div id="chatLog"></div>
-<script src="https://fungo.kcg.edu/madoi-20211030/js/madoi.js"></script>
+<div id="chatLogDiv">
+    <template data-id="logTemplate">
+        <span data-id="name"></span>: <span data-id="message"></span><br/>
+    </template>
+</div>
+<script src="https://fungo.kcg.edu/madoi-20220920/js/madoi.js"></script>
 <script>
 window.addEventListener("load", ()=>{
     // Chatクラスのインスタンスを作成する。
-    const chat = new Chat("#chatForm", "#name", "#message", "#chatLog");
+    const chat = new Chat("chatForm", "chatLogDiv");
 
-    // Madoiライブラリを使ってサービスに接続する。引数の"room/"以降はセッション識別文字列。
-    const m = new madoi.Madoi("rooms/chat-lekrouhb3");
+    // Madoiライブラリを使ってサービスに接続する。引数はルーム識別文字列。
+    const m = new madoi.Madoi("chat-abbclekrouhb3");
 
-    // chatインスタンスと共有に関するメソッドを登録する。addMessageはプロキシ関数に置き換えられる。
+    // chatインスタンスと共有に関するメソッドを登録する。addLogはプロキシ関数に置き換えられる。
     m.register(chat, [
-        {method: chat.addMessage, share: {}}
+        {method: chat.addLog, share: {}}
     ]);
 });
 
 class Chat{
-    constructor(formSelector, nameSelector, messageSelector, logSelector){
+    constructor(chatFormId, chatLogDivId){
         // HTML内のタグをJavaScriptから操作するために，対応するElementオブジェクトを取り出す。
-        this.chatForm = document.querySelector(formSelector);
-        this.nameInput = document.querySelector(nameSelector);
-        this.messageInput = document.querySelector(messageSelector);
-        this.logDiv = document.querySelector(logSelector);
-        // チャットフォームのsubmitイベントで，chat.addMessageを実行する。
-        this.chatForm.addEventListener("submit", e => {
+        const chatForm = document.getElementById(chatFormId);
+        const nameInput = chatForm.querySelector("[data-id='name']");
+        const messageInput = chatForm.querySelector("[data-id='message']");
+        // チャットフォームのsubmitイベントで，chat.addLogを実行する。
+        chatForm.addEventListener("submit", e => {
             e.preventDefault();
-            const name = this.nameInput.value.trim();
-            const message = this.messageInput.value.trim();
-            if(message.length == 0) return false;
-            this.messageInput.value = "";
-            // addMessage実行。プロキシが実行される。本来のaddMessageはサービスからメッセージが届いた際に実行される。
-            this.addMessage(name, message);
+            const name = nameInput.value.trim();
+            const message = messageInput.value.trim();
+            if(message.length > 0){
+                // addLog実行。プロキシが実行される。本来のaddLogはサービスからメッセージが届いた際に実行される。
+                this.addLog(name, message);
+                messageInput.value = "";
+            }
         });
+        this.chatLogDiv = document.getElementById(chatLogDivId);
+        this.logTemplate = this.chatLogDiv.querySelector("[data-id='logTemplate']");
     }
 
     // ログ領域にチャットメッセージを追加する関数
-    addMessage(name, message){
-        const span = document.createElement("span");
-        const br = document.createElement("br");
-        span.append(name + ": " + message);
-        this.logDiv.append(span);
-        this.logDiv.append(br);
-        this.logDiv.scrollTop = this.logDiv.scrollHeight;
+    addLog(name, message){
+        const log = this.logTemplate.content.cloneNode(true);
+        log.querySelector("[data-id='name']").textContent = name;
+        log.querySelector("[data-id='message']").textContent = message;
+        this.chatLogDiv.append(log);
+        this.chatLogDiv.scrollTop = this.chatLogDiv.scrollHeight;
     }
 }
 </script>

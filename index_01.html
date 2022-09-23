@@ -3,10 +3,11 @@
 <head>
 <meta charset="utf8">
 <style>
-#chatLog {
+#chatLogDiv {
     overflow: scroll;
     resize: vertical;
     min-height: 200px;
+    max-height: 400px;
     border: solid 1px;
     padding: 4;
     border-radius: 4px;
@@ -15,39 +16,41 @@
 </head>
 <body>
 <form id="chatForm">
-    <div>
-        <input id="name" size="8" type="text" value="匿名">
-        <input id="message" size="20" type="text" placeholder="送信するメッセージ">
-        <button type="submit">送信</button>
-    </div>
+    <input data-id="name" size="8" type="text" value="匿名">
+    <input data-id="message" size="20" type="text" placeholder="送信するメッセージ">
+    <button type="submit">送信</button>
 </form>
-<div id="chatLog"></div>
+<div id="chatLogDiv">
+    <template data-id="logTemplate">
+        <span data-id="name"></span>: <span data-id="message"></span><br/>
+    </template>
+</div>
 <script>
 window.addEventListener("load", ()=>{
     // HTML内のタグをJavaScriptから操作するために，対応するElementオブジェクトを取り出す。
-    const chatForm = document.querySelector("#chatForm");
-    const nameInput = document.querySelector("#name");
-    const messageInput = document.querySelector("#message");
-    const logDiv = document.querySelector("#chatLog");
+    const chatForm = document.getElementById("chatForm");
+    const nameInput = chatForm.querySelector("[data-id='name']");
+    const messageInput = chatForm.querySelector("[data-id='message']");
+    const chatLogDiv = document.getElementById("chatLogDiv");
+    const logTemplate = chatLogDiv.querySelector("[data-id='logTemplate']");
 
     // ログ領域にチャットメッセージを追加する関数
-    addMessage = function(name, message){
-        const span = document.createElement("span");
-        const br = document.createElement("br");
-        span.append(name + ": " + message);
-        logDiv.append(span);
-        logDiv.append(br);
-        logDiv.scrollTop = logDiv.scrollHeight;
+    addLog = function(name, message){
+        const log = logTemplate.content.cloneNode(true);
+        log.querySelector("[data-id='name']").textContent = name;
+        log.querySelector("[data-id='message']").textContent = message;
+        chatLogDiv.append(log);
+        chatLogDiv.scrollTop = chatLogDiv.scrollHeight;
     };
 
-    // チャットフォームのsubmitイベントで，addMessage関数を呼び出す。
+    // チャットフォームのsubmitイベントで，addLog関数を呼び出す。
     chatForm.addEventListener("submit", e => {
         e.preventDefault();
         const name = nameInput.value.trim();
         const message = messageInput.value.trim();
         if(message.length == 0) return false;
         messageInput.value = "";
-        addMessage(name, message);
+        addLog(name, message);
     });
 });
 </script>
